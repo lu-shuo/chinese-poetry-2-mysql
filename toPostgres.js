@@ -26,6 +26,7 @@ async function createTables() {
       dynasty VARCHAR(50),
       introduction TEXT,
       introduction_tw TEXT,
+      is_top_300 BOOLEAN DEFAULT FALSE,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
@@ -43,6 +44,7 @@ async function createTables() {
       author_name_tw VARCHAR(255),
       author_id UUID REFERENCES author(id),
       classify VARCHAR(255),
+      is_top_300 BOOLEAN DEFAULT FALSE,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
@@ -60,6 +62,7 @@ async function createTables() {
       author_name_tw VARCHAR(255),
       author_id UUID REFERENCES author(id),
       classify VARCHAR(255),
+      is_top_300 BOOLEAN DEFAULT FALSE,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
@@ -77,6 +80,7 @@ async function createTables() {
       author_name_tw VARCHAR(255),
       author_id UUID REFERENCES author(id),
       classify VARCHAR(255),
+      is_top_300 BOOLEAN DEFAULT FALSE,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
@@ -312,6 +316,7 @@ async function insertSongPoems() {
   }
 }
 
+// 导入宋词
 async function insertSongCi() {
   // 导入宋词
   for (let i = 0; i < 22; i++) {
@@ -382,6 +387,62 @@ async function insertSongCi() {
   }
 }
 
+// 标记唐诗宋词300首的作者和诗词
+const top300Tang = require('chinese-poetry/chinese-poetry/json/唐诗三百首.json')
+const top300Song = require('chinese-poetry/chinese-poetry/ci/宋词三百首.json')
+
+async function markTop300() {
+  await client.connect()
+
+  const BATCH_SIZE = 10
+
+  // 标记唐诗
+  for (let i = 0; i < top300Tang.length; i += BATCH_SIZE) {
+    const batch = top300Tang.slice(i, i + BATCH_SIZE)
+    await Promise.all(
+      batch.map((item) =>
+        client.query(
+          'UPDATE poem_tang SET is_top_300 = TRUE WHERE title_tw = $1',
+          [item.title]
+        )
+      )
+    )
+  }
+
+  // 标记宋词
+  for (let i = 0; i < top300Song.length; i += BATCH_SIZE) {
+    const batch = top300Song.slice(i, i + BATCH_SIZE)
+    await Promise.all(
+      batch.map((item) =>
+        client.query('UPDATE ci_song SET is_top_300 = TRUE WHERE title = $1', [
+          item.rhythmic,
+        ])
+      )
+    )
+  }
+
+  // 标记作者
+  const authors = [
+    ...top300Tang.map((i) => i.author),
+    ...top300Song.map((i) => i.author),
+  ]
+  const uniqueAuthors = [...new Set(authors)]
+
+  for (let i = 0; i < uniqueAuthors.length; i += BATCH_SIZE) {
+    const batch = uniqueAuthors.slice(i, i + BATCH_SIZE)
+    await Promise.all(
+      batch.map((name) =>
+        client.query(
+          'UPDATE author SET is_top_300 = TRUE WHERE name = $1 OR name_tw = $1',
+          [name]
+        )
+      )
+    )
+  }
+
+  console.log('✅ 成功标记《唐诗三百首》和《宋词三百首》')
+}
+
 async function main() {
   await client.connect()
   await createTables()
@@ -405,7 +466,7 @@ async function main() {
   await client.end()
 }
 
-main().catch((err) => {
+markTop300().catch((err) => {
   console.error('发生错误:', err)
   client.end()
 })
