@@ -32,9 +32,9 @@ async function createTables() {
     );
   `)
 
-  // 创建 poem_tang 表
+  // 创建 poem 表
   await client.query(`
-    CREATE TABLE IF NOT EXISTS poem_tang (
+    CREATE TABLE IF NOT EXISTS poem (
       id UUID PRIMARY KEY,
       title VARCHAR(255) NOT NULL,
       title_tw VARCHAR(255),
@@ -44,42 +44,7 @@ async function createTables() {
       author_name_tw VARCHAR(255),
       author_id UUID REFERENCES author(id),
       classify VARCHAR(255),
-      is_top_300 BOOLEAN DEFAULT FALSE,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-  `)
-
-  // 创建 poem_song 表
-  await client.query(`
-    CREATE TABLE IF NOT EXISTS poem_song (
-      id UUID PRIMARY KEY,
-      title VARCHAR(255) NOT NULL,
-      title_tw VARCHAR(255),
-      content TEXT NOT NULL,
-      content_tw TEXT,
-      author_name VARCHAR(255),
-      author_name_tw VARCHAR(255),
-      author_id UUID REFERENCES author(id),
-      classify VARCHAR(255),
-      is_top_300 BOOLEAN DEFAULT FALSE,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-  `)
-
-  // 创建 ci_song 表
-  await client.query(`
-    CREATE TABLE IF NOT EXISTS ci_song (
-      id UUID PRIMARY KEY,
-      title VARCHAR(255) NOT NULL,
-      title_tw VARCHAR(255),
-      content TEXT NOT NULL,
-      content_tw TEXT,
-      author_name VARCHAR(255),
-      author_name_tw VARCHAR(255),
-      author_id UUID REFERENCES author(id),
-      classify VARCHAR(255),
+      dynasty VARCHAR(50),
       is_top_300 BOOLEAN DEFAULT FALSE,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -98,7 +63,7 @@ async function createTables() {
   `)
 
   // 创建触发器
-  const tables = ['author', 'poem_tang', 'poem_song', 'ci_song']
+  const tables = ['author', 'poem']
   for (const table of tables) {
     await client.query(`
       DO $$
@@ -200,20 +165,21 @@ async function insertTangPoems() {
         author_name_tw: poem.author,
         author_id: authorId,
         classify: '诗',
+        dynasty: '唐',
       })
     }
 
     if (values.length > 0) {
       const queryText = `
-  INSERT INTO poem_tang (id, title, title_tw, content, content_tw, author_name, author_name_tw, author_id, classify)
+  INSERT INTO poem (id, title, title_tw, content, content_tw, author_name, author_name_tw, author_id, classify, dynasty)
   VALUES ${values
     .map(
       (_, idx) =>
-        `($${idx * 9 + 1}, $${idx * 9 + 2}, $${idx * 9 + 3}, $${
-          idx * 9 + 4
-        }, $${idx * 9 + 5}, $${idx * 9 + 6}, $${idx * 9 + 7}, $${
-          idx * 9 + 8
-        }, $${idx * 9 + 9})`
+        `($${idx * 10 + 1}, $${idx * 10 + 2}, $${idx * 10 + 3}, $${
+          idx * 10 + 4
+        }, $${idx * 10 + 5}, $${idx * 10 + 6}, $${idx * 10 + 7}, $${
+          idx * 10 + 8
+        }, $${idx * 10 + 9}, $${idx * 10 + 10})`
     )
     .join(',')}
 `
@@ -228,6 +194,7 @@ async function insertTangPoems() {
         v.author_name_tw,
         v.author_id,
         v.classify,
+        v.dynasty,
       ])
 
       try {
@@ -273,20 +240,21 @@ async function insertSongPoems() {
         author_name_tw: poem.author,
         author_id: authorId,
         classify: '诗',
+        dynasty: '宋',
       })
     }
 
     if (values.length > 0) {
       const queryText = `
-  INSERT INTO poem_song (id, title, title_tw, content, content_tw, author_name, author_name_tw, author_id, classify)
+  INSERT INTO poem (id, title, title_tw, content, content_tw, author_name, author_name_tw, author_id, classify, dynasty)
   VALUES ${values
     .map(
       (_, idx) =>
-        `($${idx * 9 + 1}, $${idx * 9 + 2}, $${idx * 9 + 3}, $${
-          idx * 9 + 4
-        }, $${idx * 9 + 5}, $${idx * 9 + 6}, $${idx * 9 + 7}, $${
-          idx * 9 + 8
-        }, $${idx * 9 + 9})`
+        `($${idx * 10 + 1}, $${idx * 10 + 2}, $${idx * 10 + 3}, $${
+          idx * 10 + 4
+        }, $${idx * 10 + 5}, $${idx * 10 + 6}, $${idx * 10 + 7}, $${
+          idx * 10 + 8
+        }, $${idx * 10 + 9}, $${idx * 10 + 10})`
     )
     .join(',')}
 `
@@ -301,6 +269,7 @@ async function insertSongPoems() {
         v.author_name_tw,
         v.author_id,
         v.classify,
+        v.dynasty,
       ])
 
       try {
@@ -344,20 +313,21 @@ async function insertSongCi() {
         author_name_tw: null,
         author_id: authorId,
         classify: '词',
+        dynasty: '宋',
       })
     }
 
     if (values.length > 0) {
       const queryText = `
-  INSERT INTO ci_song (id, title, title_tw, content, content_tw, author_name, author_name_tw, author_id, classify)
+  INSERT INTO poem (id, title, title_tw, content, content_tw, author_name, author_name_tw, author_id, classify, dynasty)
   VALUES ${values
     .map(
       (_, idx) =>
-        `($${idx * 9 + 1}, $${idx * 9 + 2}, $${idx * 9 + 3}, $${
-          idx * 9 + 4
-        }, $${idx * 9 + 5}, $${idx * 9 + 6}, $${idx * 9 + 7}, $${
-          idx * 9 + 8
-        }, $${idx * 9 + 9})`
+        `($${idx * 10 + 1}, $${idx * 10 + 2}, $${idx * 10 + 3}, $${
+          idx * 10 + 4
+        }, $${idx * 10 + 5}, $${idx * 10 + 6}, $${idx * 10 + 7}, $${
+          idx * 10 + 8
+        }, $${idx * 10 + 9}, $${idx * 10 + 10})`
     )
     .join(',')}
 `
@@ -372,6 +342,7 @@ async function insertSongCi() {
         v.author_name_tw,
         v.author_id,
         v.classify,
+        v.dynasty,
       ])
 
       try {
@@ -401,10 +372,9 @@ async function markTop300() {
     const batch = top300Tang.slice(i, i + BATCH_SIZE)
     await Promise.all(
       batch.map((item) =>
-        client.query(
-          'UPDATE poem_tang SET is_top_300 = TRUE WHERE title_tw = $1',
-          [item.title]
-        )
+        client.query('UPDATE poem SET is_top_300 = TRUE WHERE title_tw = $1', [
+          item.title,
+        ])
       )
     )
   }
@@ -414,7 +384,7 @@ async function markTop300() {
     const batch = top300Song.slice(i, i + BATCH_SIZE)
     await Promise.all(
       batch.map((item) =>
-        client.query('UPDATE ci_song SET is_top_300 = TRUE WHERE title = $1', [
+        client.query('UPDATE poem SET is_top_300 = TRUE WHERE title = $1', [
           item.rhythmic,
         ])
       )
